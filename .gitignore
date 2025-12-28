@@ -1,0 +1,13 @@
+__pycache__/
+log/
+*.py[cod]
+*.egg-info
+*.pot
+.mypy_cache/
+.vscode/
+.idea
+.python-version
+.coverage
+uv.lock
+.venv/
+venv/

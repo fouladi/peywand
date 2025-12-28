@@ -1,0 +1,79 @@
+[project]
+name = "Peywand"
+version = "1.0.0"
+authors = [{ name = "Farhad Fouladi", email = "f.fouladi@wmdaten.com" }]
+maintainers = [
+    { name = "Farhad Fouladi", email = "f.fouladi@wmdaten.com" },
+]
+license = "MIT"
+requires-python = ">=3.14"
+description = "Peywand"
+readme = "README.md"
+dependencies = [
+    "colored~=2.3",
+    "sqlalchemy~=2.0",
+    "tqdm~=4.67",
+]
+
+[project.urls]
+"Homepage" = ""
+
+[tool.ruff]
+# E: pycodestyle error, F: pyflakes are 'select'ed by default
+lint.extend-select = [
+    "W",  # pycodestyle warning
+    "I",  # isort
+    "UP", # pyupgrade
+]
+lint.ignore = ["UP015"]  # Unnecessary open mode parameters
+line-length = 120
+fix = false
+show-fixes = true
+target-version = 'py314' # the python version to target, useful when using pyupgrade - default "py310"
+
+extend-exclude = [
+]
+
+[tool.ruff.lint.per-file-ignores]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 120
+
+[tool.pytest.ini_options]
+pythonpath = "."
+# addopts = "--cov-report html"
+# addopts = "--capture=no"  # Option (-s) let to see print() output
+addopts = ["--cov=pw", "--cov-report", "term-missing"]
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.run]
+source = ["pw"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",   # Have to re-enable the standard pragma
+    "def __repr__",
+    "def __str__",
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:"
+]
+
+[dependency-groups]
+dev = [
+    "doq>=0.10.0",
+    "pynvim>=0.6.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.10",
+    "ruff-lsp>=0.0.62",
+]
