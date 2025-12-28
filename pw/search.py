@@ -6,8 +6,8 @@ from pw.bookmark import Bookmark
 
 ALT_BGROUND = colored.bg("#303030")
 BOLD = colored.attr("bold")
-UND = colored.attr("underline")
-RESET = colored.attr("reset")  # reset the style and colors to default
+UNDERLINE = colored.attr("underline")
+RESET = colored.attr("reset")  # reset the style and colors back to default
 
 
 def generate_search_header(search_result: list[Bookmark], color: bool = True) -> str | None:
@@ -38,7 +38,7 @@ def generate_search_header(search_result: list[Bookmark], color: bool = True) ->
         tags="Tags".ljust(len_tags),
     )
     if color:
-        return UND + BOLD + header + RESET
+        return UNDERLINE + BOLD + header + RESET
     return header
 
 
