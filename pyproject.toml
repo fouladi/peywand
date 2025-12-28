@@ -1,13 +1,13 @@
 [project]
 name = "Peywand"
 version = "1.0.0"
-authors = [{ name = "Farhad Fouladi", email = "f.fouladi@wmdaten.com" }]
+authors = [{ name = "Farhad Fouladi", email = "fouladi@gmx.de" }]
 maintainers = [
-    { name = "Farhad Fouladi", email = "f.fouladi@wmdaten.com" },
+    { name = "Farhad Fouladi", email = "fouladi@gmx.de" },
 ]
 license = "MIT"
 requires-python = ">=3.14"
-description = "Peywand"
+description = "Peywand - A terminal tool (command line) for managing bookmarks."
 readme = "README.md"
 dependencies = [
     "colored~=2.3",

@@ -1,6 +1,6 @@
 # peywand
 
-A terminal tool (command line) for managing bookmarks
+A terminal tool (command line) for managing bookmarks.
 
 # Background
 
