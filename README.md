@@ -4,14 +4,14 @@ A terminal tool (command line) for managing bookmarks
 
 # Background
 
-I use many different laptops and PCs for work and private. So in the
-past I saved my bookmarks in different places. At some point I came up
-with the idea that I could save all links to a file in my Git repo.
-After that I only have to maintain this file.
+I use many different laptops and PCs for work and personal use. In the
+past, I saved my bookmarks in different places. At some point, I had the
+idea to save all my links to a file in my Git repository. After that, I
+would only have to maintain this file.
 
-To simplify the maintenance of this file I began to implement this tool.
-And this is so `peywand` was born and it started growing. Now I store my
-bookmarks not in a file but in a `sqlite` DB.
+To simplify maintenance of the file, I began implementing this tool.
+That's how `paywand` was born, and it started growing. Now, I store my
+bookmarks in an `SQLite` database, not a file.
 
 # Requirements
 
