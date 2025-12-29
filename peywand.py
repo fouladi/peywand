@@ -146,8 +146,10 @@ def handle_update() -> None:
 def handle_import() -> None:
     """Import bookmarks from an HTML-like file.
 
-    Reads bookmark entries line by line, extracts title, link,
-    and tags, and inserts them into the database.
+    Reads bookmark entries line by line, extracts title, link, and tags,
+    and inserts them into the database. The format a read line is like:
+
+    <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
 
     A progress bar is displayed to indicate import progress.
     Duplicate bookmarks are skipped.
@@ -197,7 +199,10 @@ def handle_export() -> None:
     """Export bookmarks to an HTML-like file.
 
     Writes all bookmarks to the specified output file in a format
-    compatible with browser bookmark imports.
+    compatible with browser bookmark imports. The format of a written
+    line is like:
+
+    <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
 
     A progress bar is displayed during export.
     """
