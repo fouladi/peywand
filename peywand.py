@@ -20,11 +20,24 @@ def ensure_rows(rows: list[Bookmark] | None) -> list[Bookmark]:
 
 
 def handle_init() -> None:
+    """Initialize the Peywand database.
+
+    Creates the SQLite database file (if it does not exist) and
+    initializes all required tables using SQLAlchemy metadata.
+    """
     db.create_database(str(DB_PATH))
     print(f"Database initialized at {DB_PATH}")
 
 
 def handle_add() -> None:
+    """Add a new bookmark to the database.
+
+    Reads title, link, and tags from CLI arguments and inserts
+    a new bookmark into the database.
+
+    Raises:
+        SystemExit: If a bookmark with the same link already exists.
+    """
     bookmark = Bookmark(
         id=None,
         title=argpars.title,
@@ -37,6 +50,16 @@ def handle_add() -> None:
 
 
 def handle_list() -> None:
+    """List bookmarks from the database.
+
+    Supports optional filtering by:
+    - title
+    - link
+    - tags
+
+    Results are sorted alphabetically by title and printed
+    using the search output formatter.
+    """
     tags_list: list[str] | None = None
     if argpars.tags:
         tags_list = argpars.tags.split(";")
@@ -58,6 +81,15 @@ def handle_list() -> None:
 
 
 def handle_delete() -> None:
+    """Delete bookmarks from the database.
+
+    Deletion can be performed by:
+    - Bookmark ID (preferred, unambiguous)
+    - Title and link (strict match)
+
+    If multiple bookmarks match a non-ID query, deletion is aborted
+    and the user is asked to provide a more specific identifier.
+    """
     with SessionLocal() as session:
         if argpars.id:
             for id_str in argpars.id:
@@ -87,6 +119,13 @@ def handle_delete() -> None:
 
 
 def handle_update() -> None:
+    """Update an existing bookmark.
+
+    Updates the title, link, and tags of a bookmark identified
+    by its unique ID.
+
+    If no ID is provided, the update operation is aborted.
+    """
     if argpars.id is None:
         print("Missing bookmark ID for update.")
         return
@@ -105,6 +144,14 @@ def handle_update() -> None:
 
 
 def handle_import() -> None:
+    """Import bookmarks from an HTML-like file.
+
+    Reads bookmark entries line by line, extracts title, link,
+    and tags, and inserts them into the database.
+
+    A progress bar is displayed to indicate import progress.
+    Duplicate bookmarks are skipped.
+    """
     if not argpars.file_name:
         print("Missing import file name.")
         return
@@ -147,6 +194,13 @@ def handle_import() -> None:
 
 
 def handle_export() -> None:
+    """Export bookmarks to an HTML-like file.
+
+    Writes all bookmarks to the specified output file in a format
+    compatible with browser bookmark imports.
+
+    A progress bar is displayed during export.
+    """
     if not argpars.file_name:
         print("Missing export file name.")
         return
@@ -169,15 +223,24 @@ def handle_export() -> None:
 
 
 def handle_version() -> None:
+    """Print the current Peywand application version."""
     print(f"Current version: {pw_version}")
 
 
 def handle_default() -> None:
+    """Display usage instructions for the Peywand CLI.
+
+    This function is called when no valid command is provided.
+    """
     print("\t\tUsage: ./peywand.py -h\n")
 
 
 def main() -> None:
-    """Main program entry point for Peywand bookmark manager."""
+    """Main entry point for the Peywand CLI application.
+
+    Dispatches the parsed command to the appropriate handler function
+    based on CLI arguments.
+    """
     match argpars.command:
         case "init":
             handle_init()

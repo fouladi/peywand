@@ -27,7 +27,7 @@ def arg_setup():
     subparser = pars.add_subparsers(dest="command")
 
     # init ------------------------------
-    _ = subparser.add_parser("init", help="init bookmark db")
+    _ = subparser.add_parser("init", help="Init bookmark db")
 
     # add ------------------------------
     read_parser = subparser.add_parser("add", help="Add a bookmark")
@@ -36,7 +36,7 @@ def arg_setup():
     read_parser.add_argument("-g", "--tags", help="one or more tags seperated with ;", type=str, required=True)
 
     # list ------------------------------
-    list_parser = subparser.add_parser("list", help="Search for bookmarks")
+    list_parser = subparser.add_parser("list", help="Search and list for bookmarks")
     list_parser.add_argument("-t", "--title", help="Filter search results by specified title", default=None, type=str)
     list_parser.add_argument("-l", "--link", help="Filter search results by specified link", default=None, type=str)
     list_parser.add_argument(
