@@ -35,8 +35,13 @@ First of all you have to initialize your database:
 ./peywand.py init
 ```
 
-After that you may add, delete and update your bookmarks. For examples
-and more information see:
+After that you may add, delete and update your bookmarks.
+
+For examples to see all links for *fun* tag:
+
+![alt text](doc/images/peywand_list.gif)
+
+For more information see:
 
 ```bash
 ./peywand.py -h

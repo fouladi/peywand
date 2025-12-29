@@ -123,7 +123,7 @@ def get_uniq_bookmark_by_filter(
 def insert_bookmark(session: Session, bookmark: Bookmark) -> None:
     exists = session.scalar(select(Bookmarks).where(Bookmarks.link == bookmark.link))
     if exists:
-        raise ValueError(f"Bookmark with link '{bookmark.link}' already exists!")
+        raise SystemExit(f"Bookmark with link '{bookmark.link}' already exists!")
 
     orm = Bookmarks(
         title=bookmark.title,
