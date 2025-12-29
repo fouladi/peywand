@@ -4,21 +4,15 @@
 erDiagram
     BOOKMARKS {
         INTEGER id PK
-        TEXT title
-        TEXT link
-        TEXT created_at
+        TEXT title "NOT NULL"
+        TEXT link "NOT NULL"
+        TEXT tags
     }
 
     TAGS {
-        INTEGER id PK
-        TEXT name
-    }
-
-    BOOKMARK_TAGS {
         INTEGER bookmark_id FK
-        INTEGER tag_id FK
+        TEXT tag
     }
 
-    BOOKMARKS ||--o{ BOOKMARK_TAGS : has
-    TAGS ||--o{ BOOKMARK_TAGS : assigned_to
+    BOOKMARKS ||--o{ TAGS : has
 ```
