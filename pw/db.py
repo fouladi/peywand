@@ -192,14 +192,14 @@ def insert_bookmark(session: Session, bookmark: Bookmark) -> None:
     if exists:
         raise SystemExit(f"Bookmark with link '{bookmark.link}' already exists!")
 
-    orm = Bookmarks(
+    bm = Bookmarks(
         title=bookmark.title,
         link=bookmark.link,
         tags=bookmark.tags,
         tag_items=[Tags(tag=t) for t in _split_tags(bookmark.tags)],
     )
 
-    session.add(orm)
+    session.add(bm)
     session.commit()
 
 
@@ -238,13 +238,13 @@ def update_bookmark(session: Session, bookmark_id: int, bookmark: Bookmark) -> N
     Raises:
         ValueError: If the bookmark does not exist.
     """
-    orm = session.get(Bookmarks, bookmark_id)
-    if not orm:
+    bm = session.get(Bookmarks, bookmark_id)
+    if not bm:
         raise ValueError("Bookmark not found")
 
-    orm.title = bookmark.title
-    orm.link = bookmark.link
-    orm.tags = bookmark.tags
-    orm.tag_items = [Tags(tag=t) for t in _split_tags(bookmark.tags)]
+    bm.title = bookmark.title
+    bm.link = bookmark.link
+    bm.tags = bookmark.tags
+    bm.tag_items = [Tags(tag=t) for t in _split_tags(bookmark.tags)]
 
     session.commit()
