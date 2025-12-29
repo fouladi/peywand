@@ -12,7 +12,7 @@ from .models import Base, Bookmarks, Tags
 
 
 def create_engine_and_session(db_path: str) -> sessionmaker[Session]:
-    """“Database is created automatically when the engine/session is created.”"""
+    """Database is created automatically when the engine/session is created."""
     engine = create_engine(f"sqlite:///{db_path}", future=True)
     Base.metadata.create_all(engine)
     return sessionmaker(engine, expire_on_commit=False)
@@ -33,7 +33,6 @@ def create_database(db_path: str) -> None:
     """Create the Peywand database schema.
 
     This operation is idempotent and safe to call multiple times.
-
     Args:
         db_path: Path to the SQLite database file.
     """
@@ -51,10 +50,8 @@ def get_bookmark_by_id(session: Session, bookmark_id: int) -> Bookmark:
     Args:
         session: Active SQLAlchemy session.
         bookmark_id: Unique identifier of the bookmark.
-
     Returns:
         The matching Bookmark object.
-
     Raises:
         ValueError: If no bookmark with the given ID exists.
     """
@@ -75,7 +72,6 @@ def get_bookmarks_by_title(
         session: Active SQLAlchemy session.
         query_string: Title search string.
         is_strict: If True, match exact title.
-
     Returns:
         A list of matching bookmarks.
     """
@@ -96,7 +92,6 @@ def get_bookmarks_by_link(
         session: Active SQLAlchemy session.
         query_string: Link search string.
         is_strict: If True, match exact link.
-
     Returns:
         A list of matching bookmarks.
     """
@@ -117,7 +112,6 @@ def get_bookmarks_by_tags(
         session: Active SQLAlchemy session.
         tags: List of tags to search for.
         is_strict: If True, require exact tag matches.
-
     Returns:
         A list of matching bookmarks.
     """
@@ -151,7 +145,6 @@ def get_bookmarks_by_filter(
         link: Optional link filter.
         tags: Optional tag list.
         is_strict: If True, use exact matching.
-
     Returns:
         A list of matching bookmarks, or None if no filters were applied.
     """
@@ -192,7 +185,6 @@ def insert_bookmark(session: Session, bookmark: Bookmark) -> None:
     Args:
         session: Active SQLAlchemy session.
         bookmark: Bookmark data to insert.
-
     Raises:
         ValueError: If a bookmark with the same link already exists.
     """
@@ -243,7 +235,6 @@ def update_bookmark(session: Session, bookmark_id: int, bookmark: Bookmark) -> N
         session: Active SQLAlchemy session.
         bookmark_id: ID of the bookmark to update.
         bookmark: New bookmark data.
-
     Raises:
         ValueError: If the bookmark does not exist.
     """
