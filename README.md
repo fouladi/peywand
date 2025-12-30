@@ -15,7 +15,7 @@ bookmarks in an `SQLite` database, not a file.
 
 # Requirements
 
-- python (3.7+)
+- python (3.10+)
 - pip
 
 # Installation
