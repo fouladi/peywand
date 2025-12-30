@@ -4,8 +4,9 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from pw import __version__ as pw_version, db, search
+from pw import __version__ as pw_version, db
 from pw.bookmark import Bookmark
+from pw.bookmark_view import print_search_result
 from pw.util import argpars
 
 DB_PATH = Path.home() / ".pw.db"
@@ -77,7 +78,7 @@ def handle_list() -> None:
 
     bookmarks = sorted(ensure_rows(rows), key=lambda b: b.title)
     color_mode = not argpars.no_color
-    search.print_search_result(bookmarks, color_mode)
+    print_search_result(bookmarks, color=color_mode)
 
 
 def handle_delete() -> None:

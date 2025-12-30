@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from pw import db, search
+from pw import bookmark_view, db
 from pw.bookmark import Bookmark
 from pw.models import Base
 
@@ -46,12 +46,12 @@ def test_all(session: Session) -> None:
     b8 = db.get_bookmark_by_id(session, 5)
     assert b8.title == b5.title
 
-    search.print_search_result([b1, b2, b3, b4, b5, b6, b7, b8], False)
-    search.print_search_result([], False)
-    search.generate_search_header([], False)
+    bookmark_view.print_search_result([b1, b2, b3, b4, b5, b6, b7, b8], color=False)
+    bookmark_view.print_search_result([], color=False)
+    bookmark_view.generate_search_header([], color=False)
 
     books = db.get_bookmarks_by_title(session)
-    search.print_search_result(books, True)
+    bookmark_view.print_search_result(books, color=True)
 
     b11 = Bookmark(None, "hallo", "farrrrrr", "dad;baba")
     db.update_bookmark(session, 3, b11)
@@ -60,4 +60,4 @@ def test_all(session: Session) -> None:
     assert b3_new.title == b11.title
 
     b12 = db.get_bookmarks_by_title(session)
-    search.print_search_result(b12, True)
+    bookmark_view.print_search_result(b12, color=True)

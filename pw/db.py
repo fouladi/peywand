@@ -1,9 +1,4 @@
-from sqlalchemy import (
-    create_engine,
-    delete,
-    event,
-    select,
-)
+from sqlalchemy import create_engine, delete, event, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
