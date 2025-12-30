@@ -4,10 +4,10 @@ import colored
 
 from pw.bookmark import Bookmark
 
-ALT_BGROUND = colored.bg("#303030")
-BOLD = colored.attr("bold")
-UNDERLINE = colored.attr("underline")
-RESET = colored.attr("reset")
+ALT_BGROUND = colored.back("#303030")
+BOLD = colored.style("bold")
+UNDERLINE = colored.style("underline")
+RESET = colored.style("reset")
 
 MIN_COL_WIDTH = 20
 
