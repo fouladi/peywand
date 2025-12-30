@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 
 import colored
@@ -7,82 +9,81 @@ from pw.bookmark import Bookmark
 ALT_BGROUND = colored.bg("#303030")
 BOLD = colored.attr("bold")
 UNDERLINE = colored.attr("underline")
-RESET = colored.attr("reset")  # reset the style and colors back to default
+RESET = colored.attr("reset")
 
 MIN_COL_WIDTH = 20
 
 
-def _column_width(
-    values: Iterable[str],
-    *,
-    minimum: int = MIN_COL_WIDTH,
-) -> int:
-    """Calculate the column width for a table column.
+class TableFormatter:
+    """Formats tabular data for terminal output.
 
-    The width is determined by the longest string in *values* and is
-    guaranteed to be at least *minimum* characters wide.
-
-    Args:
-        values:
-            Iterable of strings whose lengths are evaluated.
-        minimum:
-            Minimum column width to enforce.
-    Returns:
-        The computed column width as an integer.
+    The formatter computes column widths once and can generate
+    headers and rows consistently.
     """
-    width = max((len(value) for value in values), default=0)
-    return max(width, minimum)
 
+    def __init__(
+        self,
+        *,
+        min_column_width: int = MIN_COL_WIDTH,
+        use_color: bool = True,
+    ) -> None:
+        self._min_column_width = min_column_width
+        self._use_color = use_color
 
-def _compute_column_sizes(bookmarks: list[Bookmark]) -> tuple[int, int, int, int]:
-    """Compute column widths for bookmark table output.
+    def _column_width(self, values: Iterable[str]) -> int:
+        """Return the column width based on content and minimum width."""
+        width = max((len(value) for value in values), default=0)
+        return max(width, self._min_column_width)
 
-    The calculated widths correspond to:
-         - ID column
-         - Title column
-         - Link column
-         - Tags column
+    def _compute_column_sizes(
+        self,
+        bookmarks: list[Bookmark],
+    ) -> tuple[int, int, int, int]:
+        """Compute column widths for all bookmark fields."""
+        len_id = max(len(str(len(bookmarks) - 1)), 2)
+        len_title = self._column_width(b.title or "" for b in bookmarks)
+        len_link = self._column_width(b.link or "" for b in bookmarks)
+        len_tags = self._column_width(b.tags or "" for b in bookmarks)
 
-     Args:
-         bookmarks:
-             List of bookmarks to be displayed.
-     Returns:
-         A tuple of four integers:
-         (id_width, title_width, link_width, tags_width).
-    """
-    len_id = max(len(str(len(bookmarks) - 1)), 2)
-    len_title = _column_width(b.title or "" for b in bookmarks)
-    len_link = _column_width(b.link or "" for b in bookmarks)
-    len_tags = _column_width(b.tags or "" for b in bookmarks)
+        return len_id, len_title, len_link, len_tags
 
-    return len_id, len_title, len_link, len_tags
+    def header(self, bookmarks: list[Bookmark]) -> str | None:
+        """Return the formatted table header."""
+        if not bookmarks:
+            return None
 
+        len_id, len_title, len_link, len_tags = self._compute_column_sizes(bookmarks)
 
-def generate_search_header(
-    search_result: list[Bookmark],
-    *,
-    color: bool = True,
-) -> str | None:
-    """Generate the table header for bookmark search results.
+        header = (
+            f"   [ {'ID'.rjust(len_id)} ]  {'Title'.ljust(len_title)} {'Link'.ljust(len_link)} {'Tags'.ljust(len_tags)}"
+        )
 
-    Args:
-        search_result:
-            List of bookmarks that will be printed.
-        color:
-            If True, apply terminal styling (bold + underline).
+        if self._use_color:
+            return f"{UNDERLINE}{BOLD}{header}{RESET}"
+        return header
 
-    Returns:
-        The formatted header string, or None if the result list is empty.
-    """
-    if not search_result:
-        return None
+    def rows(self, bookmarks: list[Bookmark]) -> list[str]:
+        """Return formatted table rows for the given bookmarks."""
+        if not bookmarks:
+            return []
 
-    len_id, len_title, len_link, len_tags = _compute_column_sizes(search_result)
+        len_id, len_title, len_link, len_tags = self._compute_column_sizes(bookmarks)
+        lines: list[str] = []
 
-    header = (
-        f"   [ {'ID'.rjust(len_id)} ]  {'Title'.ljust(len_title)} {'Link'.ljust(len_link)} {'Tags'.ljust(len_tags)}"
-    )
-    return f"{UNDERLINE}{BOLD}{header}{RESET}" if color else header
+        for index, bookmark in enumerate(bookmarks):
+            line = (
+                f" - [ {str(bookmark.id).rjust(len_id)} ]  "
+                f"{bookmark.title.ljust(len_title)} "
+                f"{bookmark.link.ljust(len_link)} "
+                f"{(bookmark.tags or '').ljust(len_tags)}"
+            )
+
+            if self._use_color and index % 2 == 0:
+                lines.append(f"{ALT_BGROUND}{line}{RESET}")
+            else:
+                lines.append(line)
+
+        return lines
 
 
 def print_search_result(
@@ -106,22 +107,12 @@ def print_search_result(
     if not search_result:
         return
 
-    header = generate_search_header(search_result, color=color)
+    formatter = TableFormatter(use_color=color)
+
+    header = formatter.header(search_result)
     if header:
         print(header)
         print()
 
-    len_id, len_title, len_link, len_tags = _compute_column_sizes(search_result)
-
-    for index, bookmark in enumerate(search_result):
-        line = (
-            f" - [ {str(bookmark.id).rjust(len_id)} ]  "
-            f"{bookmark.title.ljust(len_title)} "
-            f"{bookmark.link.ljust(len_link)} "
-            f"{(bookmark.tags or '').ljust(len_tags)}"
-        )
-
-        if color and index % 2 == 0:
-            print(f"{ALT_BGROUND}{line}{RESET}")
-        else:
-            print(line)
+    for line in formatter.rows(search_result):
+        print(line)

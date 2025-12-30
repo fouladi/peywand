@@ -48,7 +48,6 @@ def test_all(session: Session) -> None:
 
     bookmark_view.print_search_result([b1, b2, b3, b4, b5, b6, b7, b8], color=False)
     bookmark_view.print_search_result([], color=False)
-    bookmark_view.generate_search_header([], color=False)
 
     books = db.get_bookmarks_by_title(session)
     bookmark_view.print_search_result(books, color=True)
