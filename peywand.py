@@ -77,8 +77,7 @@ def handle_list() -> None:
             rows = db.get_bookmarks_by_title(session)
 
     bookmarks = sorted(ensure_rows(rows), key=lambda b: b.title)
-    color_mode = not argpars.no_color
-    print_search_result(bookmarks, color=color_mode)
+    print_search_result(bookmarks, alternate_row_color=argpars.row_bg_color)
 
 
 def handle_delete() -> None:

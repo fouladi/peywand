@@ -1,5 +1,7 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 
+DEFAULT_BG_COLOR = "#303030"
+
 
 def arg_setup():
     """parsing of all input arguments"""
@@ -47,7 +49,12 @@ def arg_setup():
         type=str,
     )
     list_parser.add_argument(
-        "-n", "--no-color", help="Enabled no-color mode", action="store_true", dest="no_color", default=False
+        "-c",
+        "--row-bg-color",
+        dest="row_bg_color",
+        choices=["no", "light_gray", "dark_gray", "dark_green", "light_green"],
+        default=DEFAULT_BG_COLOR,
+        help="Row background color (choices: no, light_gray, dark_gray, dark_green, light_green)",
     )
 
     # delete ------------------------------
