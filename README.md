@@ -37,7 +37,7 @@ First of all you have to initialize your database:
 
 After that you may add, delete and update your bookmarks.
 
-For examples to see all links for *fun* tag:
+For examples to see all links with word *wind* in them:
 
 ![alt text](doc/images/peywand_list.gif)
 
