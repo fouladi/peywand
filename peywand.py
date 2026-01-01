@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import json
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 from tqdm import tqdm
@@ -143,26 +145,12 @@ def handle_update() -> None:
     print(f"Bookmark '{bookmark.link}/{bookmark.title}' updated!")
 
 
-def handle_import() -> None:
-    """Import bookmarks from an HTML-like file.
-
-    Reads bookmark entries line by line, extracts title, link, and tags,
+def _import_html(file_path: Path) -> None:
+    """Reads bookmark entries line by line, extracts title, link, and tags,
     and inserts them into the database. The format a read line is like:
 
     <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
-
-    A progress bar is displayed to indicate import progress.
-    Duplicate bookmarks are skipped.
     """
-    if not argpars.file_name:
-        print("Missing import file name.")
-        return
-
-    file_path = Path(argpars.file_name)
-    if not file_path.exists():
-        print(f"File not found: {file_path}")
-        return
-
     # Count total lines for progress bar
     with file_path.open("r", encoding="utf-8") as fh:
         total_lines = sum(1 for _ in fh)
@@ -170,7 +158,7 @@ def handle_import() -> None:
     with (
         SessionLocal() as session,
         file_path.open("r", encoding="utf-8") as fh,
-        tqdm(total=total_lines, desc="Importing bookmarks", unit="lines") as bar,
+        tqdm(total=total_lines, desc="Importing HTML bookmarks", unit="lines") as bar,
     ):
         for line in fh:
             bar.update(1)
@@ -191,18 +179,97 @@ def handle_import() -> None:
             try:
                 db.insert_bookmark(session, bookmark)
             except ValueError:
-                # Duplicate links or invalid entries
                 continue
 
 
-def handle_export() -> None:
-    """Export bookmarks to an HTML-like file.
+def _import_json(file_path: Path) -> None:
+    """Reads bookmark entries from a json file, extracts title, link,
+    and tags, and inserts them into the database.
+    """
+    with file_path.open("r", encoding="utf-8") as fh:
+        data = json.load(fh)
 
-    Writes all bookmarks to the specified output file in a format
+    if not isinstance(data, list):
+        print("Invalid JSON format: expected a list")
+        return
+
+    with (
+        SessionLocal() as session,
+        tqdm(total=len(data), desc="Importing JSON bookmarks", unit="bookmarks") as bar,
+    ):
+        for item in data:
+            bar.update(1)
+
+            try:
+                bookmark = Bookmark(
+                    id=None,
+                    title=item["title"],
+                    link=item["link"],
+                    tags=item.get("tags", ""),
+                )
+                db.insert_bookmark(session, bookmark)
+            except (KeyError, ValueError):
+                continue
+
+
+def handle_import() -> None:
+    """Import bookmarks from an HTML-like or JSON file
+
+    A progress bar is displayed to indicate import progress.
+    Duplicate bookmarks are skipped.
+    """
+    if not argpars.file_name:
+        print("Missing import file name.")
+        return
+
+    file_path = Path(argpars.file_name)
+    if not file_path.exists():
+        print(f"File not found: {file_path}")
+        return
+
+    if argpars.file_format == "json":
+        _import_json(file_path)
+    else:
+        _import_html(file_path)
+
+
+def _export_html(file_path: Path, bookmarks: list[Bookmark]) -> None:
+    """Writes all bookmarks to the specified output file in a format
     compatible with browser bookmark imports. The format of a written
     line is like:
 
     <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
+    """
+    with (
+        file_path.open("w", encoding="utf-8") as fh,
+        tqdm(total=len(bookmarks), desc="Exporting HTML bookmarks", unit="bookmarks") as bar,
+    ):
+        for book in bookmarks:
+            tags = book.tags.replace(";", ",") if book.tags else ""
+            fh.write(f'<li title="{tags}"><a href="{book.link}">{book.title}</a></li>\n')
+            bar.update(1)
+
+
+def _export_json(file_path: Path, bookmarks: list[Bookmark]) -> None:
+    payload = [
+        {
+            "title": book.title,
+            "link": book.link,
+            "tags": book.tags,
+        }
+        for book in bookmarks
+    ]
+
+    with (
+        file_path.open("w", encoding="utf-8") as fh,
+        tqdm(total=len(payload), desc="Exporting JSON bookmarks", unit="bookmarks") as bar,
+    ):
+        json.dump(payload, fh, indent=2, ensure_ascii=False)
+        bar.update(len(payload))
+
+
+def handle_export() -> None:
+    """Export bookmarks to an HTML-like or JSON file.
 
     A progress bar is displayed during export.
     """
@@ -215,16 +282,10 @@ def handle_export() -> None:
     with SessionLocal() as session:
         bookmarks = ensure_rows(db.get_bookmarks_by_filter(session, title=""))
 
-    total = len(bookmarks)
-
-    with (
-        file_path.open("w", encoding="utf-8") as fh,
-        tqdm(total=total, desc="Exporting bookmarks", unit="bookmarks") as bar,
-    ):
-        for book in bookmarks:
-            tags = book.tags.replace(";", ",") if book.tags else ""
-            fh.write(f'<li title="{tags}"><a href="{book.link}">{book.title}</a></li>\n')
-            bar.update(1)
+    if argpars.file_format == "json":
+        _export_json(file_path, bookmarks)
+    else:
+        _export_html(file_path, bookmarks)
 
 
 def handle_version() -> None:
@@ -240,31 +301,25 @@ def handle_default() -> None:
     print("\t\tUsage: ./peywand.py -h\n")
 
 
+COMMANDS: dict[str, Callable[[], None]] = {
+    "init": handle_init,
+    "add": handle_add,
+    "list": handle_list,
+    "delete": handle_delete,
+    "update": handle_update,
+    "import": handle_import,
+    "export": handle_export,
+    "version": handle_version,
+}
+
+
 def main() -> None:
     """Main entry point for the Peywand CLI application.
 
     Dispatches the parsed command to the appropriate handler function
     based on CLI arguments.
     """
-    match argpars.command:
-        case "init":
-            handle_init()
-        case "add":
-            handle_add()
-        case "list":
-            handle_list()
-        case "delete":
-            handle_delete()
-        case "update":
-            handle_update()
-        case "import":
-            handle_import()
-        case "export":
-            handle_export()
-        case "version":
-            handle_version()
-        case _:
-            handle_default()
+    COMMANDS.get(argpars.command, handle_default)()
 
 
 if __name__ == "__main__":

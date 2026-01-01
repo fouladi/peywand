@@ -50,7 +50,7 @@ def arg_setup():
     )
     list_parser.add_argument(
         "-c",
-        "--row-bg-color",
+        "--row_bg_color",
         dest="row_bg_color",
         choices=["no", "light_gray", "dark_gray", "dark_green", "light_green"],
         default=DEFAULT_BG_COLOR,
@@ -74,11 +74,29 @@ def arg_setup():
 
     # import ------------------------------
     import_parser = subparser.add_parser("import", help="Import all bookmarks from a given HTML file")
-    import_parser.add_argument("-f", "--file_name", help="Name of imported file", type=str, required=True)
+    import_parser.add_argument("-n", "--file_name", help="Name of imported file", type=str, required=True)
+    import_parser.add_argument(
+        "-f",
+        "--file_format",
+        help="Format of imported file",
+        dest="file_format",
+        choices=["html", "json"],
+        type=str,
+        required=True,
+    )
 
     # export ------------------------------
     export_parser = subparser.add_parser("export", help="Export all bookmarks to a given file")
-    export_parser.add_argument("-f", "--file_name", help="Name of exported file", type=str, required=True)
+    export_parser.add_argument("-n", "--file_name", help="Name of exported file", type=str, required=True)
+    export_parser.add_argument(
+        "-f",
+        "--file_format",
+        help="Format of exported file",
+        dest="file_format",
+        choices=["html", "json"],
+        type=str,
+        required=True,
+    )
 
     # version ------------------------------
     _ = subparser.add_parser("version", help="Print out the current version")
