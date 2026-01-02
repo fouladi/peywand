@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import json
 import re
 from collections.abc import Callable
 from pathlib import Path
 
-from tqdm import tqdm
-
+import pw.plugins  # noqa
 from pw import __version__ as pw_version, db
 from pw.bookmark import Bookmark
 from pw.bookmark_view import print_search_result
+from pw.plugins.registry import get as get_plugin
 from pw.util import argpars
 
 DB_PATH = Path.home() / ".pw.db"
@@ -145,149 +144,6 @@ def handle_update() -> None:
     print(f"Bookmark '{bookmark.link}/{bookmark.title}' updated!")
 
 
-def _import_html(file_path: Path) -> None:
-    """Reads bookmark entries line by line, extracts title, link, and tags,
-    and inserts them into the database. The format a read line is like:
-
-    <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
-    """
-    # Count total lines for progress bar
-    with file_path.open("r", encoding="utf-8") as fh:
-        total_lines = sum(1 for _ in fh)
-
-    with (
-        SessionLocal() as session,
-        file_path.open("r", encoding="utf-8") as fh,
-        tqdm(total=total_lines, desc="Importing HTML bookmarks", unit="lines") as bar,
-    ):
-        for line in fh:
-            bar.update(1)
-
-            parts = line.split('"')
-            if len(parts) < 5:
-                continue
-
-            tags = parts[1]
-            link = parts[3]
-            match = re.search(REG_TITLE, parts[4])
-            if not match:
-                continue
-
-            title = match.group(1)
-            bookmark = Bookmark(id=None, title=title, link=link, tags=tags)
-
-            try:
-                db.insert_bookmark(session, bookmark)
-            except ValueError:
-                continue
-
-
-def _import_json(file_path: Path) -> None:
-    """Reads bookmark entries from a json file, extracts title, link,
-    and tags, and inserts them into the database.
-    """
-    with file_path.open("r", encoding="utf-8") as fh:
-        data = json.load(fh)
-
-    if not isinstance(data, list):
-        print("Invalid JSON format: expected a list")
-        return
-
-    with (
-        SessionLocal() as session,
-        tqdm(total=len(data), desc="Importing JSON bookmarks", unit="bookmarks") as bar,
-    ):
-        for item in data:
-            bar.update(1)
-
-            try:
-                bookmark = Bookmark(
-                    id=None,
-                    title=item["title"],
-                    link=item["link"],
-                    tags=item.get("tags", ""),
-                )
-                db.insert_bookmark(session, bookmark)
-            except (KeyError, ValueError):
-                continue
-
-
-def handle_import() -> None:
-    """Import bookmarks from an HTML-like or JSON file
-
-    A progress bar is displayed to indicate import progress.
-    Duplicate bookmarks are skipped.
-    """
-    if not argpars.file_name:
-        print("Missing import file name.")
-        return
-
-    file_path = Path(argpars.file_name)
-    if not file_path.exists():
-        print(f"File not found: {file_path}")
-        return
-
-    if argpars.file_format == "json":
-        _import_json(file_path)
-    else:
-        _import_html(file_path)
-
-
-def _export_html(file_path: Path, bookmarks: list[Bookmark]) -> None:
-    """Writes all bookmarks to the specified output file in a format
-    compatible with browser bookmark imports. The format of a written
-    line is like:
-
-    <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
-    """
-    with (
-        file_path.open("w", encoding="utf-8") as fh,
-        tqdm(total=len(bookmarks), desc="Exporting HTML bookmarks", unit="bookmarks") as bar,
-    ):
-        for book in bookmarks:
-            tags = book.tags.replace(";", ",") if book.tags else ""
-            fh.write(f'<li title="{tags}"><a href="{book.link}">{book.title}</a></li>\n')
-            bar.update(1)
-
-
-def _export_json(file_path: Path, bookmarks: list[Bookmark]) -> None:
-    payload = [
-        {
-            "title": book.title,
-            "link": book.link,
-            "tags": book.tags,
-        }
-        for book in bookmarks
-    ]
-
-    with (
-        file_path.open("w", encoding="utf-8") as fh,
-        tqdm(total=len(payload), desc="Exporting JSON bookmarks", unit="bookmarks") as bar,
-    ):
-        json.dump(payload, fh, indent=2, ensure_ascii=False)
-        bar.update(len(payload))
-
-
-def handle_export() -> None:
-    """Export bookmarks to an HTML-like or JSON file.
-
-    A progress bar is displayed during export.
-    """
-    if not argpars.file_name:
-        print("Missing export file name.")
-        return
-
-    file_path = Path(argpars.file_name)
-
-    with SessionLocal() as session:
-        bookmarks = ensure_rows(db.get_bookmarks_by_filter(session, title=""))
-
-    if argpars.file_format == "json":
-        _export_json(file_path, bookmarks)
-    else:
-        _export_html(file_path, bookmarks)
-
-
 def handle_version() -> None:
     """Print the current Peywand application version."""
     print(f"Current version: {pw_version}")
@@ -299,6 +155,43 @@ def handle_default() -> None:
     This function is called when no valid command is provided.
     """
     print("\t\tUsage: ./peywand.py -h\n")
+
+
+def handle_import() -> None:
+    """Import bookmarks from an file in different formats
+
+    A progress bar is displayed to indicate import progress.
+    Duplicate bookmarks are skipped.
+    """
+    if not argpars.file_name:
+        print("Missing import file name.")
+        return
+
+    path = Path(argpars.file_name)
+    if not path.exists():
+        print(f"File not found: {path}")
+        return
+
+    plugin = get_plugin(argpars.file_format)
+    plugin.import_data(path, SessionLocal)
+
+
+def handle_export() -> None:
+    """Export bookmarks to a file in agiven format.
+
+    A progress bar is displayed during export.
+    """
+    if not argpars.file_name:
+        print("Missing export file name.")
+        return
+
+    path = Path(argpars.file_name)
+
+    with SessionLocal() as session:
+        bookmarks = ensure_rows(db.get_bookmarks_by_filter(session, title=""))
+
+    plugin = get_plugin(argpars.file_format)
+    plugin.export_data(path, bookmarks)
 
 
 COMMANDS: dict[str, Callable[[], None]] = {

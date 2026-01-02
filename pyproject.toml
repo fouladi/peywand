@@ -1,6 +1,6 @@
 [project]
 name = "Peywand"
-version = "1.1.0"
+version = "1.2.0"
 authors = [{ name = "Farhad Fouladi", email = "fouladi@gmx.de" }]
 maintainers = [
     { name = "Farhad Fouladi", email = "fouladi@gmx.de" },

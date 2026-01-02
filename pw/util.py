@@ -8,7 +8,7 @@ def arg_setup():
 
     pars = ArgumentParser(
         "peywand.py",
-        usage="%(prog)s  {init, add, list, delete, update, version} [options]",
+        usage="%(prog)s  {init, add, list, delete, update, import, export, version} [options]",
         formatter_class=RawTextHelpFormatter,
         description="""Init and manage a DB for your bookmarks
 
@@ -22,6 +22,7 @@ def arg_setup():
         peywand.py delete -i 4
         peywand.py delete -t "Hacker News" -l "https://news.ycom.com/"
         peywand.py update -i 5 -t "FarFar" -l "https://news.news.com/" -g "news"
+        peywand.py export -f json -n bookmarks.json
 
         peywand.py version
             """,
