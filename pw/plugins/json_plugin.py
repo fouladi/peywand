@@ -37,6 +37,7 @@ class JSONPlugin:
                         ),
                     )
                 except (KeyError, ValueError):
+                    # Missing fields or duplicate entry
                     pass
 
     def export_data(self, path: Path, bookmarks: list[Bookmark]) -> None:
