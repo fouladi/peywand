@@ -21,16 +21,16 @@ Key goals of the design:
 
 ```mermaid
 graph TD
-    CLI[CLI Entry Point (main.py)] --> Handlers[Command Handlers (handle_add, handle_list, …)]
+    CLI[CLI Entry Point] --> Handlers[Command Handlers ]
 
-    Handlers --> DB[Database Layer (pw.db)]
+    Handlers --> DB[Database Layer]
     Handlers --> Plugins[Import/Export Plugins]
 
     Plugins --> HTML[HTML Plugin]
     Plugins --> JSON[JSON Plugin]
     Plugins --> CSV[CSV Plugin]
 
-    DB --> SQLite[SQLite Database (~/.pw.db)]
+    DB --> SQLite[SQLite Database ]
 ```
 
 ---
