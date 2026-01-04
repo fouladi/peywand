@@ -1,6 +1,11 @@
-# peywand
+# Peywand
 
 A terminal tool (command line) for managing bookmarks.
+
+**Peywand** is a command-line application for managing bookmarks stored
+in a local `SQLite` database. It supports adding, listing, updating,
+deleting, importing, and exporting bookmarks in multiple formats via a
+**plugin-based I/O architecture**.
 
 # Background
 
