@@ -75,7 +75,7 @@ def arg_setup():
 
     # import ------------------------------
     import_parser = subparser.add_parser("import", help="Import all bookmarks from a given HTML, JSON or CSV file")
-    import_parser.add_argument("-n", "--file", help="Name of imported file", type=str, required=True)
+    import_parser.add_argument("-n", "--file", help="Name of imported file", dest="file_name", type=str, required=True)
     import_parser.add_argument(
         "-f",
         "--format",
@@ -88,7 +88,7 @@ def arg_setup():
 
     # export ------------------------------
     export_parser = subparser.add_parser("export", help="Export all bookmarks to a given HTML, JSON or CSV file")
-    export_parser.add_argument("-n", "--file", help="Name of exported file", type=str, required=True)
+    export_parser.add_argument("-n", "--file", help="Name of exported file", dest="file_name", type=str, required=True)
     export_parser.add_argument(
         "-f",
         "--format",
