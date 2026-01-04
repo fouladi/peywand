@@ -275,7 +275,7 @@ The registry is tested for:
 
 ### 8.1 Adding a New Import/Export Format
 
-1. Create a new plugin module:
+1. Create a new plugin module (e.g. *YAML*):
 
    ```python
    class YAMLPlugin:
@@ -286,27 +286,3 @@ The registry is tested for:
 3. Import the plugin module in `pw/plugins/__init__.py`
 
 No CLI or core code changes required.
-
----
-
-## 9. Design Principles Recap
-
-* **Single responsibility** per handler
-* **Dependency injection** via session factory
-* **Explicit plugin registration** (no magic discovery)
-* **Fail-safe imports** (skip bad rows, continue processing)
-* **Modern Python** (type hints, dataclasses, context managers)
-
----
-
-## 10. Conclusion
-
-The refactored *Peywand* main module serves as a thin orchestration
-layer that:
-
-* routes commands
-* coordinates DB access
-* delegates format-specific work to plugins
-
-This structure keeps the system maintainable, testable, and easy to
-extend as new formats or features are added.
