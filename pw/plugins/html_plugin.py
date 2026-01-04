@@ -58,15 +58,12 @@ class HTMLPlugin:
         <li title="admin"><a href="https://statuses.now.sh/">HTTP Status</a></li>
         """
         with (
-            path.open("w", encoding="utf-8"),
+            path.open("w", encoding="utf-8") as fh,
             tqdm(total=len(bookmarks), desc="Exporting HTML bookmarks") as bar,
         ):
             for b in bookmarks:
                 tags = b.tags.replace(";", ",") if b.tags else ""
-                path.write_text(
-                    f'<li title="{tags}"><a href="{b.link}">{b.title}</a></li>\n',
-                    encoding="utf-8",
-                )
+                fh.write(f'<li title="{tags}"><a href="{b.link}">{b.title}</a></li>\n')
                 bar.update(1)
 
 
