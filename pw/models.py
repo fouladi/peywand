@@ -12,9 +12,9 @@ class Bookmarks(Base):
     __tablename__ = "bookmarks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String, nullable=False)
+    title: Mapped[str]
     link: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    tags: Mapped[str | None] = mapped_column(String)
+    tags: Mapped[str | None]
 
     tag_items: Mapped[list[Tags]] = relationship(
         back_populates="bookmark",
@@ -35,6 +35,6 @@ class Tags(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     bookmark_id: Mapped[int] = mapped_column(ForeignKey("bookmarks.id", ondelete="CASCADE"))
-    tag: Mapped[str] = mapped_column(String, nullable=False)
+    tag: Mapped[str]
 
     bookmark: Mapped[Bookmarks] = relationship(back_populates="tag_items")
