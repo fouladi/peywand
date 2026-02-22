@@ -6,7 +6,7 @@ from pw.plugins.csv_plugin import CSVPlugin
 def test_csv_export(tmp_path):
     plugin = CSVPlugin()
 
-    bookmarks = [
+    bookmarks: list = [
         type("B", (), {"title": "T1", "link": "L1", "tags": "a;b"})(),
         type("B", (), {"title": "T2", "link": "L2", "tags": ""})(),
     ]

@@ -6,7 +6,7 @@ from pw.plugins.json_plugin import JSONPlugin
 def test_json_export(tmp_path):
     plugin = JSONPlugin()
 
-    bookmarks = [type("B", (), {"title": "T", "link": "L", "tags": "x"})()]
+    bookmarks: list = [type("B", (), {"title": "T", "link": "L", "tags": "x"})()]
 
     out = tmp_path / "bookmarks.json"
     plugin.export_data(out, bookmarks)
