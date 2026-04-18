@@ -1,57 +1,151 @@
 # Peywand
 
-A terminal tool (command line) for managing bookmarks.
+Peywand is a terminal bookmark manager built around a local SQLite
+database. It lets you store, search, update, import, and export
+bookmarks from the command line without relying on a browser-specific
+sync flow.
 
-**Peywand** is a command-line application for managing bookmarks stored
-in a local `SQLite` database. It supports adding, listing, updating,
-deleting, importing, and exporting bookmarks in multiple formats via a
-**plugin-based I/O architecture**.
+The name `peywand` is Persian for `link`.
 
-# Background
+## Features
 
-I use many different laptops and PCs for work and personal use. In the
-past, I saved my bookmarks in different places. At some point, I had the
-idea to save all my links to a file in my Git repository. After that, I
-would only have to maintain this file.
+- Store bookmarks locally in `~/.pw.db`
+- Add, list, update, and delete bookmarks from the CLI
+- Filter bookmarks by title, link, or semicolon-separated tags
+- Import and export bookmarks as `html`, `json`, or `csv`
+- Extend file I/O through the plugin registry in [`pw/plugins`](pw/plugins)
 
-To simplify maintenance of the file, I began implementing this tool.
-That's how `paywand` was born, and it started growing. Now, I store my
-bookmarks in an `SQLite` database, not a file.
+## Requirements
 
-# Requirements
+- Python `3.14+`
+- `pip`
 
-- python (3.10+)
-- pip
+## Installation
 
-# Installation
-
-You can install *peywand* by using `pip`. Change to the directory
-*peywand* and after installation of `virtualenv` run:
+Install the project from the repository root:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install .
 ```
 
-# Usage
-
-First of all you have to initialize your database:
+For local development, install it in editable mode and add the dev
+tools:
 
 ```bash
-./peywand.py init
+python -m pip install -e .
+python -m pip install -r requirements-dev.txt
 ```
 
-After that you may add, delete and update your bookmarks.
-
-For examples to see all links with word *wind* in them:
-
-![alt text](doc/images/peywand_list.gif)
-
-For more information see:
+If you prefer installing only the runtime dependencies without packaging
+the project, `requirements.txt` is also available:
 
 ```bash
-./peywand.py -h
+python -m pip install -r requirements.txt
 ```
 
-## Meaning
+## Quick Start
 
-`peywand` is a Persian noun and means: `link`
+Initialize the database:
+
+```bash
+python peywand.py init
+```
+
+Add a bookmark:
+
+```bash
+python peywand.py add \
+  -t "Hacker News" \
+  -l "https://news.ycombinator.com/" \
+  -g "dev;news"
+```
+
+List all bookmarks:
+
+```bash
+python peywand.py list
+```
+
+Filter by tag:
+
+```bash
+python peywand.py list -g "dev"
+```
+
+Update a bookmark:
+
+```bash
+python peywand.py update \
+  -i 1 \
+  -t "Hacker News" \
+  -l "https://news.ycombinator.com/" \
+  -g "dev;news;reading"
+```
+
+Delete a bookmark by ID:
+
+```bash
+python peywand.py delete -i 1
+```
+
+Export bookmarks:
+
+```bash
+python peywand.py export -f json -n bookmarks.json
+```
+
+Import bookmarks:
+
+```bash
+python peywand.py import -f html -n bookmarks.html
+```
+
+Show command help:
+
+```bash
+python peywand.py -h
+```
+
+## Commands
+
+Peywand currently supports these subcommands:
+
+- `init`: create the SQLite database and tables
+- `add`: create a bookmark with title, link, and tags
+- `list`: show bookmarks, optionally filtered by title, link, or tags
+- `delete`: remove bookmarks by ID or by exact title/link match
+- `update`: replace the title, link, and tags of an existing bookmark
+- `import`: load bookmarks from `html`, `json`, or `csv`
+- `export`: write bookmarks to `html`, `json`, or `csv`
+- `version`: print the current application version
+
+## Output Example
+
+Listing bookmarks from the terminal:
+
+![Peywand list output](doc/images/peywand_list.gif)
+
+## Project Layout
+
+- [`peywand.py`](peywand.py): CLI entry point
+- [`pw/`](pw): core bookmark, database, and formatting logic
+- [`pw/plugins/`](pw/plugins): import/export plugins and registry
+- [`tests/`](tests): unit tests
+
+## Development
+
+Run the test suite from the repository root:
+
+```bash
+pytest
+```
+
+Lint the codebase with Ruff:
+
+```bash
+ruff check .
+```
+
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).
