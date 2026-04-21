@@ -1,8 +1,8 @@
 # Peywand
 
 Peywand is a terminal bookmark manager built around a local SQLite
-database. It lets you store, search, update, import, and export
-bookmarks from the command line without relying on a browser-specific
+database. It now uses a Textual TUI for browsing, filtering, editing,
+importing, and exporting bookmarks without relying on a browser-specific
 sync flow.
 
 The name `peywand` is Persian for `link`.
@@ -10,7 +10,8 @@ The name `peywand` is Persian for `link`.
 ## Features
 
 - Store bookmarks locally in `~/.pw.db`
-- Add, list, update, and delete bookmarks from the CLI
+- Browse bookmarks in a Textual table with keyboard-driven navigation
+- Filter, add, update, and delete bookmarks from an interactive TUI
 - Filter bookmarks by title, link, or semicolon-separated tags
 - Import and export bookmarks as `html`, `json`, or `csv`
 - Extend file I/O through the plugin registry in [`pw/plugins`](pw/plugins)
@@ -45,79 +46,33 @@ python -m pip install -r requirements.txt
 
 ## Quick Start
 
-Initialize the database:
+Launch the application:
 
 ```bash
-python peywand.py init
+python peywand.py
 ```
 
-Add a bookmark:
+Launch against a custom database path:
 
 ```bash
-python peywand.py add \
-  -t "Hacker News" \
-  -l "https://news.ycombinator.com/" \
-  -g "dev;news"
+python peywand.py --db-path ~/bookmarks.db
 ```
 
-List all bookmarks:
+Show the version:
 
 ```bash
-python peywand.py list
-```
-
-Filter by tag:
-
-```bash
-python peywand.py list -g "dev"
-```
-
-Update a bookmark:
-
-```bash
-python peywand.py update \
-  -i 1 \
-  -t "Hacker News" \
-  -l "https://news.ycombinator.com/" \
-  -g "dev;news;reading"
-```
-
-Delete a bookmark by ID:
-
-```bash
-python peywand.py delete -i 1
-```
-
-Export bookmarks:
-
-```bash
-python peywand.py export -f json -n bookmarks.json
-```
-
-Import bookmarks:
-
-```bash
-python peywand.py import -f html -n bookmarks.html
-```
-
-Show command help:
-
-```bash
-python peywand.py -h
+python peywand.py --version
 ```
 
 ## Commands
 
-Peywand currently supports these subcommands:
+The Textual application supports these workflows:
 
-- `init`: create the SQLite database and tables
-- `add`: create a bookmark with title, link, and tags
-- `list`: show bookmarks, optionally filtered by title, link, or tags
-- `delete`: remove bookmarks by ID or by exact title/link match
-- `update`: replace the title, link, and tags of an existing bookmark
-- `import`: load bookmarks from `html`, `json`, or `csv`
-- `export`: write bookmarks to `html`, `json`, or `csv`
-- `version`: print the current application version
+- Search bookmarks by title, link, or tags from the sidebar
+- Add, edit, and delete bookmarks with modal forms
+- Import bookmarks from `html`, `json`, or `csv`
+- Export the current filtered result set to `html`, `json`, or `csv`
+- Navigate entirely from the keyboard with footer key hints
 
 ## Output Example
 
@@ -127,7 +82,9 @@ Listing bookmarks from the terminal:
 
 ## Project Layout
 
-- [`peywand.py`](peywand.py): CLI entry point
+- [`peywand.py`](peywand.py): launcher for the Textual app
+- [`pw/tui.py`](pw/tui.py): Textual application and modal dialogs
+- [`pw/services.py`](pw/services.py): reusable bookmark operations
 - [`pw/`](pw): core bookmark, database, and formatting logic
 - [`pw/plugins/`](pw/plugins): import/export plugins and registry
 - [`tests/`](tests): unit tests

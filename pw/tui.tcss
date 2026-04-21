@@ -1,0 +1,116 @@
+Screen {
+    background: #101319;
+    color: #f3efe6;
+}
+
+BookmarkFormScreen,
+FileActionScreen,
+ConfirmScreen {
+    align: center middle;
+}
+
+#app-shell {
+    height: 1fr;
+    background: #18202b;
+}
+
+#sidebar {
+    width: 28;
+    min-width: 24;
+    padding: 1 2;
+    background: #171d26;
+    border-right: wide #2d3948;
+}
+
+#main-pane {
+    height: 1fr;
+    padding: 1;
+}
+
+.panel-title {
+    text-style: bold;
+    color: #f2b84b;
+    margin-bottom: 1;
+}
+
+#sidebar Input {
+    margin-bottom: 1;
+}
+
+.sidebar-actions {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.sidebar-actions Button {
+    width: 1fr;
+    margin-right: 1;
+}
+
+.panel-block {
+    margin-top: 1;
+    padding: 1;
+    min-height: 7;
+    border: round #314050;
+    background: #121821;
+}
+
+#toolbar {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#toolbar Button {
+    width: auto;
+    margin-right: 1;
+}
+
+#bookmarks-table {
+    height: 1fr;
+    border: round #314050;
+    background: #121821;
+}
+
+#modal-dialog {
+    width: 60;
+    height: auto;
+    padding: 1 2;
+    background: #171d26;
+    border: thick #f2b84b;
+}
+
+.bookmark-form,
+.file-form {
+    grid-size: 1;
+    grid-gutter: 1;
+}
+
+.bookmark-form Input,
+.file-form Input,
+.file-form Select {
+    width: 1fr;
+}
+
+.confirm-dialog {
+    grid-size: 2;
+    grid-gutter: 1 2;
+    grid-rows: auto 3;
+    align: center middle;
+}
+
+#modal-title {
+    width: 1fr;
+    color: #f2b84b;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.dialog-buttons {
+    margin-top: 1;
+    height: auto;
+}
+
+.dialog-buttons Button {
+    width: 1fr;
+    margin-right: 1;
+}

@@ -12,6 +12,7 @@ readme = "README.md"
 dependencies = [
     "colored~=2.3",
     "sqlalchemy~=2.0",
+    "textual~=3.0",
     "tqdm~=4.67",
 ]
 

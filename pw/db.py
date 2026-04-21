@@ -32,7 +32,10 @@ def create_database(db_path: str) -> None:
         db_path: Path to the SQLite database file.
     """
     engine = create_engine(f"sqlite:///{db_path}", future=True)
-    Base.metadata.create_all(engine)
+    try:
+        Base.metadata.create_all(engine)
+    finally:
+        engine.dispose()
 
 
 def _split_tags(tags: str) -> list[str]:
@@ -185,7 +188,7 @@ def insert_bookmark(session: Session, bookmark: Bookmark) -> None:
     """
     exists = session.scalar(select(Bookmarks).where(Bookmarks.link == bookmark.link))
     if exists:
-        raise SystemExit(f"Bookmark with link '{bookmark.link}' already exists!")
+        raise ValueError(f"Bookmark with link '{bookmark.link}' already exists!")
 
     bm = Bookmarks(
         title=bookmark.title,
