@@ -36,12 +36,27 @@ class JSONPlugin:
                             tags=item.get("tags", ""),
                         ),
                     )
-                except (KeyError, ValueError):
+                except KeyError, ValueError:
                     # Missing fields or duplicate entry
                     pass
 
     def export_data(self, path: Path, bookmarks: list[Bookmark]) -> None:
-        payload = [{"title": b.title, "link": b.link, "tags": b.tags} for b in bookmarks]
+        """Export bookmarks to a JSON file.
+
+        Args:
+            path: Destination file path.
+            bookmarks: List of bookmarks to export.
+
+        Notes:
+            - Existing files are overwritten.
+            - UTF-8 encoding is always used.
+        """
+        with tqdm(total=len(bookmarks), desc="Exporting JSON bookmarks", unit="bookmarks") as bar:
+            payload = []
+            for b in bookmarks:
+                payload.append({"title": b.title, "link": b.link, "tags": b.tags})
+                bar.update(1)
+
         path.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",

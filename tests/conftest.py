@@ -1,9 +1,8 @@
-from collections import namedtuple
 from pathlib import Path
 
 import pytest
 
-Bookmark = namedtuple("Bookmark", "id title link tags")
+from pw.bookmark import Bookmark  # noqa: F401 — re-exported for test modules
 
 
 @pytest.fixture

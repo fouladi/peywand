@@ -44,3 +44,48 @@ def test_csv_import(tmp_path, session_factory, monkeypatch):
     assert len(inserted) == 2
     assert inserted[0].title == "Title 1"
     assert inserted[1].link == "https://b.example"
+
+
+def test_csv_import_skips_duplicate(tmp_path, session_factory, monkeypatch):
+    """Rows that raise ValueError (duplicate link) are silently skipped."""
+    plugin = CSVPlugin()
+
+    csv_file = tmp_path / "bookmarks.csv"
+    csv_file.write_text(
+        "title,link,tags\nTitle 1,https://a.example,dev\nTitle 1,https://a.example,dev\n",
+        encoding="utf-8",
+    )
+
+    call_count = 0
+
+    def fake_insert(session, bookmark):
+        nonlocal call_count
+        call_count += 1
+        if call_count > 1:
+            raise ValueError("duplicate")
+
+    monkeypatch.setattr("pw.plugins.csv_plugin.db.insert_bookmark", fake_insert)
+
+    # Should not raise even though the second row is a duplicate
+    plugin.import_data(csv_file, session_factory)
+    assert call_count == 2
+
+
+def test_csv_import_skips_row_with_missing_fields(tmp_path, session_factory, monkeypatch):
+    """Rows missing required fields are silently skipped."""
+    plugin = CSVPlugin()
+
+    # 'link' column is absent — DictReader will not have that key
+    csv_file = tmp_path / "bad.csv"
+    csv_file.write_text("title,tags\nOnly Title,dev\n", encoding="utf-8")
+
+    inserted = []
+
+    def fake_insert(session, bookmark):
+        inserted.append(bookmark)  # pragma: no cover
+
+    monkeypatch.setattr("pw.plugins.csv_plugin.db.insert_bookmark", fake_insert)
+
+    plugin.import_data(csv_file, session_factory)
+
+    assert inserted == []

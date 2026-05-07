@@ -24,6 +24,7 @@ class TableFormatter:
         self._min_column_width = min_column_width
         self._use_color = False if alternate_row_color == "no" else True
         self._alternate_row_style = ALT_BGROUND if alternate_row_color == "no" else colored.back(alternate_row_color)
+        self._column_sizes: tuple[int, int, int, int] | None = None
 
     def _column_width(self, values: Iterable[str]) -> int:
         """Return the column width based on content and minimum width."""
@@ -35,12 +36,13 @@ class TableFormatter:
         bookmarks: list[Bookmark],
     ) -> tuple[int, int, int, int]:
         """Compute column widths for all bookmark fields."""
-        len_id = max(len(str(len(bookmarks) - 1)), 2)
-        len_title = self._column_width(b.title or "" for b in bookmarks)
-        len_link = self._column_width(b.link or "" for b in bookmarks)
-        len_tags = self._column_width(b.tags or "" for b in bookmarks)
-
-        return len_id, len_title, len_link, len_tags
+        if self._column_sizes is None:
+            len_id = max(len(str(len(bookmarks) - 1)), 2)
+            len_title = self._column_width(b.title or "" for b in bookmarks)
+            len_link = self._column_width(b.link or "" for b in bookmarks)
+            len_tags = self._column_width(b.tags or "" for b in bookmarks)
+            self._column_sizes = (len_id, len_title, len_link, len_tags)
+        return self._column_sizes
 
     def header(self, bookmarks: list[Bookmark]) -> str | None:
         """Return the formatted table header."""

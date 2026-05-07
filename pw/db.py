@@ -6,11 +6,15 @@ from .bookmark import Bookmark
 from .models import Base, Bookmarks, Tags
 
 
-def create_engine_and_session(db_path: str) -> sessionmaker[Session]:
-    """Database is created automatically when the engine/session is created."""
+def create_engine_and_session(db_path: str) -> tuple[Engine, sessionmaker[Session]]:
+    """Database is created automatically when the engine/session is created.
+
+    Returns:
+        A tuple of (engine, session_factory).
+    """
     engine = create_engine(f"sqlite:///{db_path}", future=True)
     Base.metadata.create_all(engine)
-    return sessionmaker(engine, expire_on_commit=False)
+    return engine, sessionmaker(engine, expire_on_commit=False)
 
 
 @event.listens_for(Engine, "connect")
@@ -132,7 +136,7 @@ def get_bookmarks_by_filter(
     link: str | None = None,
     tags: list[str] | None = None,
     is_strict: bool = False,
-) -> list[Bookmark] | None:
+) -> list[Bookmark]:
     """Retrieve bookmarks matching combined filter criteria.
 
     All provided filters are combined using logical AND.
@@ -144,7 +148,7 @@ def get_bookmarks_by_filter(
         tags: Optional tag list.
         is_strict: If True, use exact matching.
     Returns:
-        A list of matching bookmarks, or None if no filters were applied.
+        A list of matching bookmarks, or an empty list if no filters matched.
     """
     stmt = select(Bookmarks)
 
@@ -163,7 +167,7 @@ def get_bookmarks_by_filter(
             stmt = stmt.where(Tags.tag.ilike(pattern))
 
     result = list(session.scalars(stmt.distinct()))
-    return [b.to_dataclass() for b in result] if result else None
+    return [b.to_dataclass() for b in result]
 
 
 def get_uniq_bookmark_by_filter(
@@ -243,6 +247,10 @@ def update_bookmark(session: Session, bookmark_id: int, bookmark: Bookmark) -> N
     bm.title = bookmark.title
     bm.link = bookmark.link
     bm.tags = bookmark.tags
+
+    # Explicitly replace tags to avoid relying on implicit cascade detection
+    for tag in list(bm.tag_items):
+        session.delete(tag)
     bm.tag_items = [Tags(tag=t) for t in _split_tags(bookmark.tags)]
 
     session.commit()
