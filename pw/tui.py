@@ -91,11 +91,23 @@ class BookmarkFormScreen(ModalScreen[BookmarkFormData | None]):
 class FileActionScreen(ModalScreen[FileActionData | None]):
     BINDINGS = [Binding("escape", "cancel", "Cancel")]
 
-    def __init__(self, title: str, formats: list[str], default_path: str = "") -> None:
+    def __init__(
+        self,
+        title: str,
+        formats: list[str],
+        default_path: str = "",
+        *,
+        fixed_format: str | None = None,
+    ) -> None:
         super().__init__()
         self.screen_title = title
         self.formats = formats
         self.default_path = default_path
+        self.fixed_format = fixed_format
+
+    def _path_placeholder(self) -> str:
+        file_format = self.fixed_format or self.formats[0]
+        return f"/path/to/file.{file_format}"
 
     def compose(self) -> ComposeResult:
         options = [(file_format.upper(), file_format) for file_format in self.formats]
@@ -103,8 +115,9 @@ class FileActionScreen(ModalScreen[FileActionData | None]):
 
         with Grid(id="modal-dialog", classes="file-form"):
             yield Label(self.screen_title, id="modal-title")
-            yield Select(options, allow_blank=False, value=default_format, id="file-format")
-            yield Input(value=self.default_path, placeholder="/path/to/file.json", id="file-path")
+            if self.fixed_format is None:
+                yield Select(options, allow_blank=False, value=default_format, id="file-format")
+            yield Input(value=self.default_path, placeholder=self._path_placeholder(), id="file-path")
             with Horizontal(classes="dialog-buttons"):
                 yield Button("Run", id="submit", variant="success")
                 yield Button("Cancel", id="cancel", variant="primary")
@@ -120,7 +133,7 @@ class FileActionScreen(ModalScreen[FileActionData | None]):
             self.dismiss(None)
             return
 
-        file_format = str(self.query_one("#file-format", Select).value)
+        file_format = self.fixed_format or str(self.query_one("#file-format", Select).value)
         path = self.query_one("#file-path", Input).value.strip()
 
         if not path:
@@ -151,6 +164,8 @@ class PeywandApp(App[None]):
         self.selected_bookmark_id: int | None = None
 
     def compose(self) -> ComposeResult:
+        file_menu_options = [(file_format.upper(), file_format) for file_format in self.service.available_formats()]
+
         yield Header(show_clock=True)
         with Horizontal(id="app-shell"):
             with Vertical(id="sidebar"):
@@ -162,8 +177,8 @@ class PeywandApp(App[None]):
                     yield Button("Apply", id="apply-filters", variant="primary")
                     yield Button("Clear", id="clear-filters")
                 with Horizontal(classes="sidebar-actions"):
-                    yield Button("Import", id="import")
-                    yield Button("Export", id="export")
+                    yield Select(file_menu_options, prompt="Import", id="import-menu", compact=True)
+                    yield Select(file_menu_options, prompt="Export", id="export-menu", compact=True)
                 yield Static("", id="stats", classes="panel-block")
                 yield Static("No bookmark selected.", id="details", classes="panel-block")
             with Vertical(id="main-pane"):
@@ -172,6 +187,8 @@ class PeywandApp(App[None]):
                     yield Button("Add", id="add", variant="success", compact=True)
                     yield Button("Edit", id="edit", compact=True)
                     yield Button("Delete", id="delete", variant="error", compact=True)
+                    yield Button("Import", id="toolbar-import", compact=True)
+                    yield Button("Export", id="toolbar-export", compact=True)
                 yield DataTable(id="bookmarks-table", zebra_stripes=True, cursor_type="row")
         yield Footer()
 
@@ -272,16 +289,35 @@ class PeywandApp(App[None]):
         self.push_screen(ConfirmScreen(f"Delete '{bookmark.title}'?"), self._handle_delete_result)
 
     def action_import_bookmarks(self) -> None:
+        self.open_import_screen()
+
+    def open_import_screen(self, file_format: str | None = None) -> None:
         self.push_screen(
-            FileActionScreen("Import bookmarks", self.service.available_formats()),
+            FileActionScreen(
+                self._file_action_title("Import bookmarks", file_format),
+                self.service.available_formats(),
+                fixed_format=file_format,
+            ),
             self._handle_import_result,
         )
 
     def action_export_bookmarks(self) -> None:
+        self.open_export_screen()
+
+    def open_export_screen(self, file_format: str | None = None) -> None:
         self.push_screen(
-            FileActionScreen("Export current results", self.service.available_formats()),
+            FileActionScreen(
+                self._file_action_title("Export current results", file_format),
+                self.service.available_formats(),
+                fixed_format=file_format,
+            ),
             self._handle_export_result,
         )
+
+    def _file_action_title(self, base_title: str, file_format: str | None) -> str:
+        if file_format is None:
+            return base_title
+        return f"{base_title} ({file_format.upper()})"
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
@@ -297,14 +333,27 @@ class PeywandApp(App[None]):
             self.action_edit_bookmark()
         elif button_id == "delete":
             self.action_delete_bookmark()
-        elif button_id == "import":
+        elif button_id == "toolbar-import":
             self.action_import_bookmarks()
-        elif button_id == "export":
+        elif button_id == "toolbar-export":
             self.action_export_bookmarks()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id in {"filter-title", "filter-link", "filter-tags"}:
             self.refresh_table()
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id not in {"import-menu", "export-menu"} or event.value == Select.BLANK:
+            return
+
+        file_format = str(event.value)
+        event.select.value = Select.BLANK
+
+        if event.select.id == "import-menu":
+            self.open_import_screen(file_format)
+            return
+
+        self.open_export_screen(file_format)
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         self.selected_bookmark_id = self._bookmark_id_from_row_key(event.row_key)

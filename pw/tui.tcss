@@ -47,6 +47,15 @@ ConfirmScreen {
     margin-right: 1;
 }
 
+.sidebar-actions Select {
+    width: 1fr;
+    margin-right: 1;
+}
+
+#export-menu {
+    margin-right: 0;
+}
+
 .panel-block {
     margin-top: 1;
     padding: 1;

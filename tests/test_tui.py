@@ -34,9 +34,8 @@ def test_tui_crud_import_export_flow(tmp_path: Path) -> None:
             assert "Changed" in str(app.query_one("#details", Static).renderable)
 
             export_path = tmp_path / "bookmarks.json"
-            await pilot.click("#export")
+            app.query_one("#export-menu", Select).value = "json"
             await pilot.pause()
-            app.screen.query_one("#file-format", Select).value = "json"
             app.screen.query_one("#file-path", Input).value = str(export_path)
             await pilot.click("#submit")
             await pilot.pause()
@@ -50,9 +49,8 @@ def test_tui_crud_import_export_flow(tmp_path: Path) -> None:
             await pilot.pause()
             assert table.row_count == 0
 
-            await pilot.click("#import")
+            app.query_one("#import-menu", Select).value = "json"
             await pilot.pause()
-            app.screen.query_one("#file-format", Select).value = "json"
             app.screen.query_one("#file-path", Input).value = str(export_path)
             await pilot.click("#submit")
             await pilot.pause()
@@ -78,14 +76,57 @@ def test_tui_default_size_keeps_import_export_accessible(tmp_path: Path) -> None
             await pilot.pause()
 
             export_path = tmp_path / "empty.json"
-            await pilot.click("#export")
+            app.query_one("#export-menu", Select).value = "json"
             await pilot.pause()
-            app.screen.query_one("#file-format", Select).value = "json"
             app.screen.query_one("#file-path", Input).value = str(export_path)
             await pilot.click("#submit")
             await pilot.pause()
 
             assert export_path.exists()
             assert json.loads(export_path.read_text(encoding="utf-8")) == []
+
+    asyncio.run(scenario())
+
+
+def test_tui_format_menus_reset_and_drive_file_extension(tmp_path: Path) -> None:
+    async def scenario() -> None:
+        app = PeywandApp(tmp_path / "peywand.db")
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            export_menu = app.query_one("#export-menu", Select)
+            export_menu.value = "csv"
+            await pilot.pause()
+            assert export_menu.value == Select.BLANK
+            assert app.screen.query_one("#file-path", Input).placeholder == "/path/to/file.csv"
+            await pilot.click("#cancel")
+            await pilot.pause()
+
+            import_menu = app.query_one("#import-menu", Select)
+            import_menu.value = "html"
+            await pilot.pause()
+            assert import_menu.value == Select.BLANK
+            assert app.screen.query_one("#file-path", Input).placeholder == "/path/to/file.html"
+
+    asyncio.run(scenario())
+
+
+def test_tui_toolbar_import_export_buttons_reuse_action_menus(tmp_path: Path) -> None:
+    async def scenario() -> None:
+        app = PeywandApp(tmp_path / "peywand.db")
+
+        async with app.run_test(size=(120, 36)) as pilot:
+            await pilot.pause()
+
+            await pilot.click("#toolbar-export")
+            await pilot.pause()
+            assert app.screen.query_one("#file-format", Select).value == "csv"
+            await pilot.click("#cancel")
+            await pilot.pause()
+
+            await pilot.click("#toolbar-import")
+            await pilot.pause()
+            assert app.screen.query_one("#file-format", Select).value == "csv"
 
     asyncio.run(scenario())
