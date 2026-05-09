@@ -195,7 +195,7 @@ class PeywandApp(App[None]):
     def on_mount(self) -> None:
         self.service.initialize_database()
         table = self.query_one("#bookmarks-table", DataTable)
-        table.add_columns("ID", "Title", "Link", "Tags")
+        table.add_columns("Tags", "Title", "Link", "ID")
         table.focus()
         self.refresh_table()
 
@@ -225,10 +225,10 @@ class PeywandApp(App[None]):
 
         for bookmark in self.bookmarks:
             table.add_row(
-                str(bookmark.id or ""),
+                bookmark.tags,
                 bookmark.title,
                 bookmark.link,
-                bookmark.tags,
+                str(bookmark.id or ""),
                 key=str(bookmark.id),
             )
 

@@ -37,6 +37,7 @@ def test_header_returns_string_with_column_labels() -> None:
         assert "Title" in header
         assert "Link" in header
         assert "Tags" in header
+        assert header.index("Tags") < header.index("Title") < header.index("Link") < header.index("ID")
 
 
 def test_header_empty_bookmarks_returns_none() -> None:
@@ -78,6 +79,7 @@ def test_rows_contain_bookmark_data() -> None:
     assert "https://alpha.example" in rows[0]
     assert "Beta" in rows[1]
     assert "Gamma" in rows[2]
+    assert rows[0].index("Alpha") < rows[0].index("https://alpha.example") < rows[0].rindex(" - [")
 
 
 def test_rows_empty_bookmarks_returns_empty_list() -> None:
@@ -90,9 +92,10 @@ def test_rows_with_color_disabled_all_rows_are_plain_strings() -> None:
     formatter = TableFormatter(alternate_row_color="no")
     rows = formatter.rows(_make_bookmarks())
 
-    # All rows start with the plain " - [" prefix (no color wrapper)
+    # All rows are plain strings with the ID marker rendered at the end.
     for row in rows:
-        assert row.startswith(" - [")
+        assert row.endswith(" ]")
+        assert " - [ " in row
 
 
 def test_rows_with_color_enabled_even_rows_are_wrapped() -> None:
@@ -113,8 +116,9 @@ def test_rows_with_color_enabled_even_rows_are_wrapped() -> None:
     assert "Alpha" in rows[0]
     assert "Beta" in rows[1]
     assert "Gamma" in rows[2]
-    # Odd-index row is always plain (starts with " - [")
-    assert rows[1].startswith(" - [")
+    # Odd-index row is always plain with the ID marker at the end.
+    assert rows[1].index("https://beta.example") < rows[1].rindex(" - [")
+    assert rows[1].endswith("]")
 
 
 # ---------------------------------------------------------------------------

@@ -162,6 +162,11 @@ user interactions.
 └─ Footer (key bindings) ───────────────────────────────────────┘
 ```
 
+The bookmarks table displays four columns in this order:
+`Tags`, `Title`, `Link`, `ID`. Tags are shown first to make
+categorization easier to scan, while the numeric identifier remains
+available at the end of each row.
+
 ### Key Bindings
 
 | Key | Action |

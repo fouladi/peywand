@@ -24,6 +24,8 @@ def test_tui_crud_import_export_flow(tmp_path: Path) -> None:
 
             table = app.query_one("#bookmarks-table", DataTable)
             assert table.row_count == 1
+            assert [str(column.label) for column in table.ordered_columns] == ["Tags", "Title", "Link", "ID"]
+            assert table.get_row("1") == ["demo;ref", "Example", "https://example.com", "1"]
             assert "Example" in str(app.query_one("#details", Static).renderable)
 
             await pilot.click("#edit")

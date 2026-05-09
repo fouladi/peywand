@@ -52,7 +52,7 @@ class TableFormatter:
         len_id, len_title, len_link, len_tags = self._compute_column_sizes(bookmarks)
 
         header = (
-            f"   [ {'ID'.rjust(len_id)} ]  {'Title'.ljust(len_title)} {'Link'.ljust(len_link)} {'Tags'.ljust(len_tags)}"
+            f"{'Tags'.ljust(len_tags)} {'Title'.ljust(len_title)} {'Link'.ljust(len_link)}   [ {'ID'.rjust(len_id)} ]"
         )
         return f"{UNDERLINE}{BOLD}{header}{RESET}" if self._alternate_row_style else header
 
@@ -66,10 +66,10 @@ class TableFormatter:
 
         for index, bookmark in enumerate(bookmarks):
             line = (
-                f" - [ {str(bookmark.id).rjust(len_id)} ]  "
+                f"{(bookmark.tags or '').ljust(len_tags)} "
                 f"{bookmark.title.ljust(len_title)} "
                 f"{bookmark.link.ljust(len_link)} "
-                f"{(bookmark.tags or '').ljust(len_tags)}"
+                f" - [ {str(bookmark.id).rjust(len_id)} ]"
             )
 
             if self._use_color and index % 2 == 0:
