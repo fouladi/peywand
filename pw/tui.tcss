@@ -107,11 +107,37 @@ ConfirmScreen {
     align: center middle;
 }
 
+.progress-dialog {
+    grid-size: 1;
+    grid-gutter: 1;
+    width: 68;
+    padding: 2 2;
+}
+
 #modal-title {
     width: 1fr;
     color: #f2b84b;
     text-style: bold;
     margin-bottom: 1;
+}
+
+#progress-subtitle {
+    width: 1fr;
+    color: #9cb2c8;
+    margin-bottom: 1;
+}
+
+#transfer-progress {
+    width: 1fr;
+    margin-bottom: 1;
+}
+
+#progress-status {
+    width: 1fr;
+    padding: 0 1;
+    color: #f3efe6;
+    background: #121821;
+    border: round #314050;
 }
 
 .dialog-buttons {

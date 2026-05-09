@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pw.bookmark import Bookmark
 from pw.services import BookmarkFilters, BookmarkService
 
 
@@ -63,6 +64,46 @@ def test_service_export_and_import_json(tmp_path: Path) -> None:
     finally:
         source.close()
         target.close()
+
+
+def test_service_passes_progress_callback_to_plugins(tmp_path: Path, monkeypatch) -> None:
+    service = BookmarkService(tmp_path / "peywand.db")
+    import_events: list[tuple[int, int | None]] = []
+    export_events: list[tuple[int, int | None]] = []
+
+    class RecordingPlugin:
+        def import_data(self, path, session_factory, progress_callback=None) -> None:
+            if progress_callback is not None:
+                progress_callback(1, 3)
+
+        def export_data(self, path, bookmarks, progress_callback=None) -> None:
+            assert bookmarks == [Bookmark(id=1, title="Example", link="https://example.com", tags="demo")]
+            if progress_callback is not None:
+                progress_callback(2, 4)
+
+    try:
+        monkeypatch.setattr("pw.services.get_plugin", lambda file_format: RecordingPlugin())
+        monkeypatch.setattr(
+            service,
+            "list_bookmarks",
+            lambda filters=None: [Bookmark(id=1, title="Example", link="https://example.com", tags="demo")],
+        )
+
+        service.import_bookmarks(
+            path=tmp_path / "bookmarks.json",
+            file_format="json",
+            progress_callback=lambda completed, total: import_events.append((completed, total)),
+        )
+        service.export_bookmarks(
+            path=tmp_path / "bookmarks.json",
+            file_format="json",
+            progress_callback=lambda completed, total: export_events.append((completed, total)),
+        )
+    finally:
+        service.close()
+
+    assert import_events == [(1, 3)]
+    assert export_events == [(2, 4)]
 
 
 def test_bookmark_filters_tag_list_returns_none_when_empty() -> None:

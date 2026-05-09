@@ -64,7 +64,7 @@ uv sync --group dev
 This will:
 - download and pin the correct Python version (3.14, from `.python-version`)
 - create a `.venv` in the project root
-- install runtime dependencies (`colored`, `sqlalchemy`, `textual`, `tqdm`)
+- install runtime dependencies (`colored`, `sqlalchemy`, `textual`)
 - install dev dependencies (`pytest`, `pytest-cov`, `ruff`, `ty`, …)
 
 ### 3. Activate the virtual environment

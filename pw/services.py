@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import io
-from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from pathlib import Path
 
 import pw.plugins  # noqa: F401
 from pw import db
 from pw.bookmark import Bookmark
+from pw.plugins.io import ProgressCallback
 from pw.plugins.registry import available_formats, get as get_plugin
 
 
@@ -68,15 +67,26 @@ class BookmarkService:
         with self.session_factory() as session:
             db.delete_bookmark_by_id(session, bookmark_id)
 
-    def import_bookmarks(self, *, path: Path, file_format: str) -> None:
+    def import_bookmarks(
+        self,
+        *,
+        path: Path,
+        file_format: str,
+        progress_callback: ProgressCallback | None = None,
+    ) -> None:
         plugin = get_plugin(file_format)
-        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-            plugin.import_data(path, self.session_factory)
+        plugin.import_data(path, self.session_factory, progress_callback)
 
-    def export_bookmarks(self, *, path: Path, file_format: str, filters: BookmarkFilters | None = None) -> None:
+    def export_bookmarks(
+        self,
+        *,
+        path: Path,
+        file_format: str,
+        filters: BookmarkFilters | None = None,
+        progress_callback: ProgressCallback | None = None,
+    ) -> None:
         plugin = get_plugin(file_format)
-        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-            plugin.export_data(path, self.list_bookmarks(filters))
+        plugin.export_data(path, self.list_bookmarks(filters), progress_callback)
 
     def available_formats(self) -> list[str]:
         return available_formats()

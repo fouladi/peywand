@@ -1,10 +1,9 @@
 import csv
 from pathlib import Path
 
-from tqdm import tqdm
-
 from pw import db
 from pw.bookmark import Bookmark
+from pw.plugins.io import ProgressCallback, report_progress
 from pw.plugins.registry import register
 
 
@@ -21,7 +20,7 @@ class CSVPlugin:
 
     format = "csv"
 
-    def import_data(self, path: Path, session_factory) -> None:
+    def import_data(self, path: Path, session_factory, progress_callback: ProgressCallback | None = None) -> None:
         """Import bookmarks from a CSV file.
 
         Args:
@@ -35,12 +34,11 @@ class CSVPlugin:
         with path.open(newline="", encoding="utf-8") as fh:
             reader = list(csv.DictReader(fh))
 
-        with (
-            session_factory() as session,
-            tqdm(total=len(reader), desc="Importing CSV bookmarks", unit="rows") as bar,
-        ):
-            for row in reader:
-                bar.update(1)
+        total = len(reader)
+        report_progress(progress_callback, 0, total)
+
+        with session_factory() as session:
+            for index, row in enumerate(reader, start=1):
                 try:
                     bookmark = Bookmark(
                         id=None,
@@ -49,11 +47,18 @@ class CSVPlugin:
                         tags=row.get("tags", ""),
                     )
                     db.insert_bookmark(session, bookmark)
-                except (KeyError, ValueError):
+                except KeyError, ValueError:
                     # Missing fields or duplicate entry
                     continue
+                finally:
+                    report_progress(progress_callback, index, total)
 
-    def export_data(self, path: Path, bookmarks: list[Bookmark]) -> None:
+    def export_data(
+        self,
+        path: Path,
+        bookmarks: list[Bookmark],
+        progress_callback: ProgressCallback | None = None,
+    ) -> None:
         """Export bookmarks to a CSV file.
 
         Args:
@@ -64,14 +69,14 @@ class CSVPlugin:
             - Existing files are overwritten.
             - UTF-8 encoding is always used.
         """
-        with (
-            path.open("w", newline="", encoding="utf-8") as fh,
-            tqdm(total=len(bookmarks), desc="Exporting CSV bookmarks", unit="bookmarks") as bar,
-        ):
+        total = len(bookmarks)
+        report_progress(progress_callback, 0, total)
+
+        with path.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=["title", "link", "tags"])
             writer.writeheader()
 
-            for bookmark in bookmarks:
+            for index, bookmark in enumerate(bookmarks, start=1):
                 writer.writerow(
                     {
                         "title": bookmark.title,
@@ -79,7 +84,7 @@ class CSVPlugin:
                         "tags": bookmark.tags,
                     }
                 )
-                bar.update(1)
+                report_progress(progress_callback, index, total)
 
 
 # Register plugin on import

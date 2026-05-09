@@ -1,17 +1,16 @@
 import json
 from pathlib import Path
 
-from tqdm import tqdm
-
 from pw import db
 from pw.bookmark import Bookmark
+from pw.plugins.io import ProgressCallback, report_progress
 from pw.plugins.registry import register
 
 
 class JSONPlugin:
     format = "json"
 
-    def import_data(self, path: Path, session_factory) -> None:
+    def import_data(self, path: Path, session_factory, progress_callback: ProgressCallback | None = None) -> None:
         """Reads bookmark entries from a json file, extracts title,
         link, and tags, and inserts them into the database.
         """
@@ -20,12 +19,11 @@ class JSONPlugin:
         if not isinstance(data, list):
             raise ValueError("Invalid JSON format")
 
-        with (
-            session_factory() as session,
-            tqdm(total=len(data), desc="Importing JSON bookmarks") as bar,
-        ):
-            for item in data:
-                bar.update(1)
+        total = len(data)
+        report_progress(progress_callback, 0, total)
+
+        with session_factory() as session:
+            for index, item in enumerate(data, start=1):
                 try:
                     db.insert_bookmark(
                         session,
@@ -39,8 +37,15 @@ class JSONPlugin:
                 except KeyError, ValueError:
                     # Missing fields or duplicate entry
                     pass
+                finally:
+                    report_progress(progress_callback, index, total)
 
-    def export_data(self, path: Path, bookmarks: list[Bookmark]) -> None:
+    def export_data(
+        self,
+        path: Path,
+        bookmarks: list[Bookmark],
+        progress_callback: ProgressCallback | None = None,
+    ) -> None:
         """Export bookmarks to a JSON file.
 
         Args:
@@ -51,11 +56,13 @@ class JSONPlugin:
             - Existing files are overwritten.
             - UTF-8 encoding is always used.
         """
-        with tqdm(total=len(bookmarks), desc="Exporting JSON bookmarks", unit="bookmarks") as bar:
-            payload = []
-            for b in bookmarks:
-                payload.append({"title": b.title, "link": b.link, "tags": b.tags})
-                bar.update(1)
+        total = len(bookmarks)
+        report_progress(progress_callback, 0, total)
+
+        payload = []
+        for index, bookmark in enumerate(bookmarks, start=1):
+            payload.append({"title": bookmark.title, "link": bookmark.link, "tags": bookmark.tags})
+            report_progress(progress_callback, index, total)
 
         path.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False),

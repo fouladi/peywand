@@ -245,7 +245,7 @@ Key registry functions:
 | `JSONPlugin` | `json_plugin.py` | Structured machine-readable format |
 | `CSVPlugin` | `csv_plugin.py` | Spreadsheet-friendly format |
 
-All plugins show a `tqdm` progress bar during both import and export.
+The Textual app shows a native progress modal during both import and export.
 
 **HTML format** uses Python's standard `html.parser.HTMLParser` to
 parse entries reliably:

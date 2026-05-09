@@ -3,14 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
+from textual.color import Gradient
 from textual.containers import Grid, Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, DataTable, Footer, Header, Input, Label, Select, Static
+from textual.widgets import Button, DataTable, Footer, Header, Input, Label, ProgressBar, Select, Static
+from textual.worker import Worker, WorkerState
 
 from pw.bookmark import Bookmark
+from pw.plugins.io import ProgressCallback
 from pw.services import BookmarkFilters, BookmarkService
+
+TRANSFER_PROGRESS_GRADIENT = Gradient.from_colors("#f2b84b", "#f07f4f", "#5fd0b3", quality=80)
 
 
 @dataclass(slots=True, frozen=True)
@@ -24,6 +30,13 @@ class BookmarkFormData:
 class FileActionData:
     file_format: str
     path: str
+
+
+@dataclass(slots=True, frozen=True)
+class FileActionOutcome:
+    action: str
+    path: Path
+    file_format: str
 
 
 class ConfirmScreen(ModalScreen[bool]):
@@ -143,6 +156,35 @@ class FileActionScreen(ModalScreen[FileActionData | None]):
         self.dismiss(FileActionData(file_format=file_format, path=path))
 
 
+class FileTransferProgressScreen(ModalScreen[None]):
+    def __init__(self, title: str, subtitle: str, pending_message: str) -> None:
+        super().__init__()
+        self.screen_title = title
+        self.subtitle = subtitle
+        self.pending_message = pending_message
+
+    def compose(self) -> ComposeResult:
+        with Grid(id="modal-dialog", classes="progress-dialog"):
+            yield Label(self.screen_title, id="modal-title")
+            yield Static(self.subtitle, id="progress-subtitle")
+            yield ProgressBar(total=None, id="transfer-progress", gradient=TRANSFER_PROGRESS_GRADIENT)
+            yield Static(self.pending_message, id="progress-status")
+
+    def update_progress(self, completed: int, total: int | None) -> None:
+        if not self.is_mounted:
+            return
+
+        self.query_one("#transfer-progress", ProgressBar).update(total=total, progress=completed)
+        self.query_one("#progress-status", Static).update(self._status_text(completed, total))
+
+    def _status_text(self, completed: int, total: int | None) -> str:
+        if total is None:
+            return self.pending_message
+
+        noun = "bookmark" if total == 1 else "bookmarks"
+        return f"{completed} of {total} {noun}"
+
+
 class PeywandApp(App[None]):
     CSS_PATH = "tui.tcss"
     TITLE = "Peywand"
@@ -162,6 +204,8 @@ class PeywandApp(App[None]):
         self.service = BookmarkService(db_path)
         self.bookmarks: list[Bookmark] = []
         self.selected_bookmark_id: int | None = None
+        self._file_action_worker: Worker[FileActionOutcome] | None = None
+        self._file_action_screen: FileTransferProgressScreen | None = None
 
     def compose(self) -> ComposeResult:
         file_menu_options = [(file_format.upper(), file_format) for file_format in self.service.available_formats()]
@@ -408,27 +452,111 @@ class PeywandApp(App[None]):
         if result is None:
             return
 
-        try:
-            self.service.import_bookmarks(path=Path(result.path).expanduser(), file_format=result.file_format)
-        except (OSError, ValueError, SystemExit) as error:
-            self.notify(str(error), severity="error", timeout=8)
-            return
-
-        self.refresh_table()
-        self.notify(f"Imported bookmarks from {result.path}.")
+        self._start_file_action("import", result)
 
     def _handle_export_result(self, result: FileActionData | None) -> None:
         if result is None:
             return
 
-        try:
-            self.service.export_bookmarks(
-                path=Path(result.path).expanduser(),
-                file_format=result.file_format,
-                filters=self.current_filters(),
-            )
-        except (OSError, ValueError) as error:
-            self.notify(str(error), severity="error", timeout=8)
+        self._start_file_action("export", result)
+
+    def _start_file_action(self, action: str, result: FileActionData) -> None:
+        path = Path(result.path).expanduser()
+        pending_message = "Scanning file..." if action == "import" else "Collecting current results..."
+        title = f"{action.title()}ing {result.file_format.upper()} bookmarks"
+        screen = FileTransferProgressScreen(title=title, subtitle=str(path), pending_message=pending_message)
+
+        self._file_action_screen = screen
+        self.push_screen(screen)
+
+        if action == "import":
+            self._file_action_worker = self._run_import_job(path, result.file_format, screen)
             return
 
-        self.notify(f"Exported bookmarks to {result.path}.")
+        self._file_action_worker = self._run_export_job(path, result.file_format, self.current_filters(), screen)
+
+    def _make_progress_callback(
+        self,
+        screen: FileTransferProgressScreen,
+    ) -> ProgressCallback:
+        last_bucket = -1
+
+        def callback(completed: int, total: int | None) -> None:
+            nonlocal last_bucket
+
+            if total not in {None, 0}:
+                bucket = int((completed * 100) / total)
+                if bucket == last_bucket and completed not in {0, total}:
+                    return
+                last_bucket = bucket
+
+            self.call_from_thread(screen.update_progress, completed, total)
+
+        return callback
+
+    @work(thread=True, group="file-actions", exit_on_error=False)
+    def _run_import_job(
+        self,
+        path: Path,
+        file_format: str,
+        screen: FileTransferProgressScreen,
+    ) -> FileActionOutcome:
+        progress_callback = self._make_progress_callback(screen)
+        progress_callback(0, None)
+        self.service.import_bookmarks(
+            path=path,
+            file_format=file_format,
+            progress_callback=progress_callback,
+        )
+        return FileActionOutcome(action="import", path=path, file_format=file_format)
+
+    @work(thread=True, group="file-actions", exit_on_error=False)
+    def _run_export_job(
+        self,
+        path: Path,
+        file_format: str,
+        filters: BookmarkFilters,
+        screen: FileTransferProgressScreen,
+    ) -> FileActionOutcome:
+        progress_callback = self._make_progress_callback(screen)
+        progress_callback(0, None)
+        self.service.export_bookmarks(
+            path=path,
+            file_format=file_format,
+            filters=filters,
+            progress_callback=progress_callback,
+        )
+        return FileActionOutcome(action="export", path=path, file_format=file_format)
+
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        if event.worker is not self._file_action_worker:
+            return
+
+        if event.state not in {WorkerState.SUCCESS, WorkerState.ERROR, WorkerState.CANCELLED}:
+            return
+
+        screen = self._file_action_screen
+        self._file_action_worker = None
+        self._file_action_screen = None
+
+        if screen is not None and screen.is_mounted:
+            screen.dismiss(None)
+
+        if event.state == WorkerState.SUCCESS:
+            outcome = event.worker.result
+            if outcome is None:
+                return
+            self._handle_file_action_success(outcome)
+            return
+
+        error = event.worker.error
+        message = str(error) if error else "The file action did not finish."
+        self.notify(message, severity="error", timeout=8)
+
+    def _handle_file_action_success(self, outcome: FileActionOutcome) -> None:
+        if outcome.action == "import":
+            self.refresh_table()
+            self.notify(f"Imported bookmarks from {outcome.path}.")
+            return
+
+        self.notify(f"Exported bookmarks to {outcome.path}.")
